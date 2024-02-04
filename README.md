@@ -1,4 +1,4 @@
-*Chemical Bingo*
+# Chemical Bingo
 
 **The game**
 
