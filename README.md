@@ -38,7 +38,8 @@ Here's how the project works:
 
 
 **Local usage**
-To start the game, first startup the server
+
+Once cloned the git, to start the game, first startup the server
 
  ```  http-server ```
 
