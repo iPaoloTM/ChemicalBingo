@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chemical Bingo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    td {
+      width: 60px;
+      height: 60px;
+      border: 1px solid #ccc;
+      text-align: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    td.clicked {
+      background-color: green;
+      color: white;
+    }
+
+    td.wrong {
+      background-color: red;
+      color: white;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chemical Bingo</h1>
+  <p id="currentElement"></p>
+  <table id="bingoGrid"><p id="loading">loading...</p></table>
+  <div>
+  <button onclick="resetGame()">Reset Game</button>
+  <button onclick="newElement()">Next Element</button>
+  </div>
+  <script>
+    var elementsDictionary = {};
+
+    var elementsDictionaryForGame = {};
+
+    var symbol = ''
+    var name = ''
+    var bingoDone=[]
+
+    function newElement() {
+      var orbitals = ['s', 'p', 'd', 'f'];
+      var chosenOrbital = orbitals[Math.floor(Math.random() * orbitals.length)];
+
+      if (!bingoDone.includes(0)) {
+        chosenOrbital='s'
+      } else if (!bingoDone.includes(1)) {
+        chosenOrbital='p'
+      } else if (!bingoDone.includes(2)) {
+        chosenOrbital='d'
+      } else {
+        chosenOrbital='f'
+      }
+
+      var symbols = Object.keys(elementsDictionaryForGame[chosenOrbital]);
+      var randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+
+      document.getElementById('currentElement').innerText = elementsDictionaryForGame[chosenOrbital][randomSymbol];
+      console.log("NEW ELEMENT " + elementsDictionaryForGame[chosenOrbital][randomSymbol]+ " ORBITAL "+getOrbital(randomSymbol));
+
+      symbol = randomSymbol;
+      name = elementsDictionaryForGame[chosenOrbital][randomSymbol];
+    }
+
+
+
+    function getRandomElement(i) {
+      const orbitals = ['s', 'p', 'd', 'f'];
+      const randomOrbital = orbitals[i];
+      const symbols = Object.keys(elementsDictionary[randomOrbital]);
+      const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+
+      // Delete the selected symbol from the dictionary
+      delete elementsDictionary[randomOrbital][randomSymbol];
+
+      return {
+        symbol: randomSymbol,
+        name: elementsDictionary[randomOrbital][randomSymbol],
+      };
+    }
+
+    function initializeGrid() {
+      const grid = document.getElementById('bingoGrid');
+      document.getElementById('loading').innerText = '';
+
+      const orbitals = ['s', 'p', 'd', 'f'];
+
+      for (let i = 0; i < 4; i++) {
+        const row = grid.insertRow(i);
+
+        // Add the orbital letter cell
+        const orbitalCell = row.insertCell(0);
+        orbitalCell.innerText = orbitals[i];
+        orbitalCell.style.color='grey'
+        orbitalCell.disabled='true'
+        orbitalCell.classList.add('clicked');
+        orbitalCell.style.backgroundColor='#f0f0f0'
+        orbitalCell.style.pointerEvents = 'none';
+
+        // Add the rest of the cells
+        for (let j = 1; j < 6; j++) {
+          const cell = row.insertCell(j);
+          cell.addEventListener('click', () => checkCell(cell));
+          updateCell(cell, i);
+        }
+      }
+    }
+
+
+    function updateCell(cell, i) {
+      const { symbol } = getRandomElement(i);
+      cell.textContent = symbol;
+      cell.classList.remove('clicked', 'wrong');
+    }
+
+
+    function checkCell(cell) {
+
+      const cellSymbol = cell.textContent;
+
+      if (cellSymbol === symbol) {
+        cell.classList.add('clicked');
+        delete elementsDictionaryForGame['s'][symbol];
+        delete elementsDictionaryForGame['p'][symbol];
+        delete elementsDictionaryForGame['d'][symbol];
+        delete elementsDictionaryForGame['f'][symbol];
+        console.log(`Correct! ${name}`);
+        document.getElementById('currentElement').style.color='green'
+        cell.disabled='true'
+      } else {
+        cell.classList.add('wrong');
+        console.log(`Incorrect! The correct element is ${symbol} but you pressed `+cellSymbol);
+        setTimeout(() => {
+          cell.classList.remove('wrong');
+        }, 1000);
+        document.getElementById('currentElement').style.color='red'
+      }
+      // Check for a bingo
+      checkBingo();
+      setTimeout(() => {
+        newElement();
+        document.getElementById('currentElement').style.color='black'
+      }, 1000);
+    }
+
+    function checkBingo() {
+      const rows = document.getElementById('bingoGrid').rows;
+
+      for (let i = 0; i < 4; i++) {
+        let bingo = true;
+        let winningCells = [];
+
+        // Check if the current row is already marked as completed
+        if (bingoDone.includes(i)) {
+          continue;  // Skip to the next iteration if the row is completed
+        }
+
+        for (let j = 0; j < 6; j++) {
+          const cell = rows[i].cells[j];
+
+          if (!cell.classList.contains('clicked')) {
+            bingo = false;
+            break;
+          }
+
+          winningCells.push(cell);
+        }
+
+        if (bingo) {
+          var tempOrb = '';
+          if (i == 0) {
+            tempOrb = 's';
+          } else if (i == 1) {
+            tempOrb = 'p';
+          } else if (i == 2) {
+            tempOrb = 'd';
+          } else if (i == 3) {
+            tempOrb = 'f';
+          }
+
+          if (!bingoDone.includes(i)) {
+            // Mark the row as completed only if it's the first time
+            bingoDone.push(i);
+
+            // Highlight winning cells
+            highlightWinningCells(winningCells);
+
+            // Alert about the bingo
+            alert('BINGO! Row #' + (i + 1) + ' completed');
+          }
+        }
+
+        if (bingoDone.includes(0) && bingoDone.includes(1) && bingoDone.includes(2) && bingoDone.includes(3)) {
+          alert('You won the game!');
+        }
+      }
+    }
+
+    function highlightWinningCells(cells) {
+      cells.forEach(cell => {
+        cell.style.backgroundColor = '#4caf50';
+        cell.style.color = 'white';
+      });
+    }
+
+    function resetGame() {
+      // Reset the elements dictionary
+      for (const symbol in elementsDictionary) {
+        delete elementsDictionary[symbol];
+      }
+
+      document.getElementById('loading').innerText='loading...'
+      const grid = document.getElementById('bingoGrid');
+      grid.innerHTML = '';
+      startGame();
+    }
+
+    function getOrbital(symbol) {
+      for (const orbital in elementsDictionaryForGame) {
+        if (elementsDictionaryForGame[orbital][symbol]) {
+          return orbital;
+        }
+      }
+      return null;
+    }
+
+    function readElements() {
+      fetch('elements.json')
+        .then(response => response.json())
+        .then(data => {
+          // Deep copy using JSON.parse and JSON.stringify
+          elementsDictionaryForGame = JSON.parse(JSON.stringify(data));
+          elementsDictionary = JSON.parse(JSON.stringify(data));
+        })
+        .catch(error => console.error('Error fetching elements.json:', error));
+    }
+
+
+    //give time to the page to load elements
+    function startGame() {
+      readElements();
+      setTimeout(() => {
+        initializeGrid();
+        newElement();
+      }, 700);
+    }
+
+
+    startGame();
+  </script>
+</body>
+</html>
