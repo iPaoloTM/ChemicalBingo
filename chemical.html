@@ -170,30 +170,47 @@
     function checkCell(cell) {
 
       const cellSymbol = cell.textContent;
+      var orb = getOrbital(cellSymbol)
+      var flag = 0
 
-      if (cellSymbol === symbol) {
-        cell.classList.add('clicked');
-        delete elementsDictionaryForGame['s'][symbol];
-        delete elementsDictionaryForGame['p'][symbol];
-        delete elementsDictionaryForGame['d'][symbol];
-        delete elementsDictionaryForGame['f'][symbol];
-        console.log(`Correct! ${name}`);
-        document.getElementById('currentElement').style.color='green'
-        cell.disabled='true'
-      } else {
-        cell.classList.add('wrong');
-        console.log(`Incorrect! The correct element is ${symbol} but you pressed `+cellSymbol);
-        setTimeout(() => {
-          cell.classList.remove('wrong');
-        }, 1000);
-        document.getElementById('currentElement').style.color='red'
+      if (orb=='s') {
+        flag=0
+      } else if (orb=='p') {
+        flag=1
+      } else if (orb=='d') {
+        flag=2
+      } else if (orb=='f') {
+        flag=3
       }
-      // Check for a bingo
-      checkBingo();
-      setTimeout(() => {
-        newElement();
-        document.getElementById('currentElement').style.color='black'
-      }, 1000);
+
+
+      if (!bingoDone.includes(flag)) {
+        if (cellSymbol === symbol) {
+          cell.classList.add('clicked');
+          delete elementsDictionaryForGame['s'][symbol];
+          delete elementsDictionaryForGame['p'][symbol];
+          delete elementsDictionaryForGame['d'][symbol];
+          delete elementsDictionaryForGame['f'][symbol];
+          console.log(`Correct! ${name}`);
+          document.getElementById('currentElement').style.color='green'
+          cell.disabled='true'
+        } else {
+          cell.classList.add('wrong');
+          console.log(`Incorrect! The correct element is ${symbol} but you pressed `+cellSymbol);
+          setTimeout(() => {
+            cell.classList.remove('wrong');
+          }, 1000);
+          document.getElementById('currentElement').style.color='red'
+        }
+        // Check for a bingo
+        checkBingo();
+        setTimeout(() => {
+          newElement();
+          document.getElementById('currentElement').style.color='black'
+        }, 1000);
+      } else {
+        console.log("inactive")
+      }
     }
 
     function checkBingo() {
@@ -220,16 +237,6 @@
         }
 
         if (bingo) {
-          var tempOrb = '';
-          if (i == 0) {
-            tempOrb = 's';
-          } else if (i == 1) {
-            tempOrb = 'p';
-          } else if (i == 2) {
-            tempOrb = 'd';
-          } else if (i == 3) {
-            tempOrb = 'f';
-          }
 
           if (!bingoDone.includes(i)) {
             // Mark the row as completed only if it's the first time
