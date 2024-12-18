@@ -71,59 +71,62 @@
       padding: 10px;
       font-size: 10px;
     }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    #currentElement {
+      animation: fadeIn 0.5s ease;
+      font-size: 24px;
+    }
   </style>
 </head>
 <body>
   <h1>Chemical Bingo</h1>
   <p id="currentElement"></p>
-  <table id="bingoGrid"><p id="loading">loading...</p></table>
+  <table id="bingoGrid"><p id="loading">Loading...</p></table>
   <div>
-  <button onclick="resetGame()">Reset Game</button>
-  <button onclick="newElement()">Next Element</button>
+    <button onclick="resetGame()">Reset Game</button>
+    <button onclick="newElement()">Next Element</button>
   </div>
-  <p class="footer">Tombola Chimica inspired by Prof. Marco Lambruschi own work, all rights reserved to him ® </p>
+  <p class="footer">Tombola Chimica inspired by Prof. Marco Lambruschi's work. All rights reserved ®</p>
   <script>
-    var elementsDictionary = {};
-
-    var elementsDictionaryForGame = {};
-
-    var symbol = ''
-    var name = ''
-    var bingoDone=[]
+    let elementsDictionary = {};
+    let elementsDictionaryForGame = {};
+    let symbol = '';
+    let name = '';
+    let bingoDone = [];
 
     function newElement() {
-      var orbitals = ['s', 'p', 'd', 'f'];
-      var chosenOrbital = orbitals[Math.floor(Math.random() * orbitals.length)];
+      const orbitals = ['s', 'p', 'd', 'f'];
+      let chosenOrbital = orbitals.find((_, index) => !bingoDone.includes(index)) || 's';
 
-      if (!bingoDone.includes(0)) {
-        chosenOrbital='s'
-      } else if (!bingoDone.includes(1)) {
-        chosenOrbital='p'
-      } else if (!bingoDone.includes(2)) {
-        chosenOrbital='d'
-      } else {
-        chosenOrbital='f'
+      const symbols = Object.keys(elementsDictionaryForGame[chosenOrbital]);
+      const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+
+      if (!randomSymbol) {
+        alert('No more elements available in this orbital.');
+        return;
       }
 
-      var symbols = Object.keys(elementsDictionaryForGame[chosenOrbital]);
-      var randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
-
-      document.getElementById('currentElement').innerText = elementsDictionaryForGame[chosenOrbital][randomSymbol];
-      console.log("NEW ELEMENT " + elementsDictionaryForGame[chosenOrbital][randomSymbol]+ " ORBITAL "+getOrbital(randomSymbol));
-
+      document.getElementById('currentElement').innerText =
+        elementsDictionaryForGame[chosenOrbital][randomSymbol];
       symbol = randomSymbol;
       name = elementsDictionaryForGame[chosenOrbital][randomSymbol];
     }
 
-
-
-    function getRandomElement(i) {
+    function getRandomElement(orbitalIndex) {
       const orbitals = ['s', 'p', 'd', 'f'];
-      const randomOrbital = orbitals[i];
+      const randomOrbital = orbitals[orbitalIndex];
       const symbols = Object.keys(elementsDictionary[randomOrbital]);
       const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
 
-      // Delete the selected symbol from the dictionary
       delete elementsDictionary[randomOrbital][randomSymbol];
 
       return {
@@ -134,23 +137,18 @@
 
     function initializeGrid() {
       const grid = document.getElementById('bingoGrid');
+      grid.innerHTML = ''; // Clear grid for reset
       document.getElementById('loading').innerText = '';
 
       const orbitals = ['s', 'p', 'd', 'f'];
 
       for (let i = 0; i < 4; i++) {
         const row = grid.insertRow(i);
-
-        // Add the orbital letter cell
         const orbitalCell = row.insertCell(0);
         orbitalCell.innerText = orbitals[i];
-        orbitalCell.style.color='grey'
-        orbitalCell.disabled='true'
-        orbitalCell.classList.add('clicked');
-        orbitalCell.style.backgroundColor='#f0f0f0'
+        orbitalCell.style.color = 'grey';
         orbitalCell.style.pointerEvents = 'none';
 
-        // Add the rest of the cells
         for (let j = 1; j < 6; j++) {
           const cell = row.insertCell(j);
           cell.addEventListener('click', () => checkCell(cell));
@@ -159,57 +157,38 @@
       }
     }
 
-
-    function updateCell(cell, i) {
-      const { symbol } = getRandomElement(i);
+    function updateCell(cell, orbitalIndex) {
+      const { symbol } = getRandomElement(orbitalIndex);
       cell.textContent = symbol;
       cell.classList.remove('clicked', 'wrong');
     }
 
-
     function checkCell(cell) {
-
       const cellSymbol = cell.textContent;
-      var orb = getOrbital(cellSymbol)
-      var flag = 0
-
-      if (orb=='s') {
-        flag=0
-      } else if (orb=='p') {
-        flag=1
-      } else if (orb=='d') {
-        flag=2
-      } else if (orb=='f') {
-        flag=3
-      }
-
+      const orb = getOrbital(cellSymbol);
+      const flag = ['s', 'p', 'd', 'f'].indexOf(orb);
 
       if (!bingoDone.includes(flag)) {
         if (cellSymbol === symbol) {
           cell.classList.add('clicked');
-          delete elementsDictionaryForGame['s'][symbol];
-          delete elementsDictionaryForGame['p'][symbol];
-          delete elementsDictionaryForGame['d'][symbol];
-          delete elementsDictionaryForGame['f'][symbol];
+          delete elementsDictionaryForGame[orb][symbol];
           console.log(`Correct! ${name}`);
-          document.getElementById('currentElement').style.color='green'
-          cell.disabled='true'
+          document.getElementById('currentElement').style.color = 'green';
+          cell.disabled = true;
         } else {
           cell.classList.add('wrong');
-          console.log(`Incorrect! The correct element is ${symbol} but you pressed `+cellSymbol);
-          setTimeout(() => {
-            cell.classList.remove('wrong');
-          }, 1000);
-          document.getElementById('currentElement').style.color='red'
+          console.log(`Incorrect! The correct element is ${symbol}`);
+          setTimeout(() => cell.classList.remove('wrong'), 1000);
+          document.getElementById('currentElement').style.color = 'red';
         }
-        // Check for a bingo
+
         checkBingo();
         setTimeout(() => {
           newElement();
-          document.getElementById('currentElement').style.color='black'
+          document.getElementById('currentElement').style.color = 'black';
         }, 1000);
       } else {
-        console.log("inactive")
+        console.log('Inactive cell.');
       }
     }
 
@@ -217,94 +196,66 @@
       const rows = document.getElementById('bingoGrid').rows;
 
       for (let i = 0; i < 4; i++) {
-        let bingo = true;
-        let winningCells = [];
+        if (bingoDone.includes(i)) continue;
 
-        // Check if the current row is already marked as completed
-        if (bingoDone.includes(i)) {
-          continue;  // Skip to the next iteration if the row is completed
+        const row = rows[i];
+        const isComplete = Array.from(row.cells)
+          .slice(1) // Exclude the orbital cell
+          .every((cell) => cell.classList.contains('clicked'));
+
+        if (isComplete) {
+          bingoDone.push(i);
+          highlightRow(row);
+          alert(`Bingo! Row ${i + 1} completed.`);
         }
+      }
 
-        for (let j = 0; j < 6; j++) {
-          const cell = rows[i].cells[j];
-
-          if (!cell.classList.contains('clicked')) {
-            bingo = false;
-            break;
-          }
-
-          winningCells.push(cell);
-        }
-
-        if (bingo) {
-
-          if (!bingoDone.includes(i)) {
-            // Mark the row as completed only if it's the first time
-            bingoDone.push(i);
-
-            // Highlight winning cells
-            highlightWinningCells(winningCells);
-
-            // Alert about the bingo
-            alert('BINGO! Row #' + (i + 1) + ' completed');
-          }
-        }
-
-        if (bingoDone.includes(0) && bingoDone.includes(1) && bingoDone.includes(2) && bingoDone.includes(3)) {
-          alert('You won the game!');
-        }
+      if (bingoDone.length === 4) {
+        alert('Congratulations! You completed all rows!');
       }
     }
 
-    function highlightWinningCells(cells) {
-      cells.forEach(cell => {
+    function highlightRow(row) {
+      Array.from(row.cells).forEach((cell) => {
         cell.style.backgroundColor = '#4caf50';
         cell.style.color = 'white';
       });
     }
 
     function resetGame() {
-      // Reset the elements dictionary
-      for (const symbol in elementsDictionary) {
-        delete elementsDictionary[symbol];
-      }
-
-      document.getElementById('loading').innerText='loading...'
-      const grid = document.getElementById('bingoGrid');
-      grid.innerHTML = '';
-      startGame();
+      elementsDictionary = {};
+      elementsDictionaryForGame = {};
+      bingoDone = [];
+      document.getElementById('currentElement').innerText = '';
+      readElements(() => {
+        initializeGrid();
+        newElement();
+      });
     }
 
     function getOrbital(symbol) {
-      for (const orbital in elementsDictionaryForGame) {
-        if (elementsDictionaryForGame[orbital][symbol]) {
-          return orbital;
-        }
-      }
-      return null;
+      return Object.keys(elementsDictionaryForGame).find((orbital) =>
+        elementsDictionaryForGame[orbital][symbol]
+      );
     }
 
-    function readElements() {
+    function readElements(callback) {
       fetch('elements.json')
-        .then(response => response.json())
-        .then(data => {
-          // Deep copy using JSON.parse and JSON.stringify
+        .then((response) => response.json())
+        .then((data) => {
           elementsDictionaryForGame = JSON.parse(JSON.stringify(data));
           elementsDictionary = JSON.parse(JSON.stringify(data));
+          callback();
         })
-        .catch(error => console.error('Error fetching elements.json:', error));
+        .catch((error) => console.error('Error fetching elements.json:', error));
     }
 
-
-    //give time to the page to load elements
     function startGame() {
-      readElements();
-      setTimeout(() => {
+      readElements(() => {
         initializeGrid();
         newElement();
-      }, 700);
+      });
     }
-
 
     startGame();
   </script>
